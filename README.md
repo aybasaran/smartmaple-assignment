@@ -1,6 +1,6 @@
 ## Projenin Amacı
 
-KitapYurdu sitesinden kitap bilgilerini kazıyıp, MongoDB veritabanına kaydeden bir uygulama geliştirmek.
+Kitapyurdu ve Kitapsepeti sitelerindeki kitapları kazıyıp, MongoDB veritabanına kaydetmek.
 
 ## Kullanılan Teknolojiler
 
@@ -36,14 +36,27 @@ python app.py
 
 ## Nasıl Çalışır?
 
-KitayYurdu.com sitesi static bir site olduğu için, requests kütüphanesi ile sayfaları istek atarak alabiliyoruz. Daha sonra BeautifulSoup kütüphanesi ile sayfaları parse ediyoruz. Siteyi biraz incelediğimizde kitapyurdu.com/index.php?route=product/category&sort=purchased_365&order=DESC&path=1&filter_category_all=true&filter_in_shelf=1 şöyle bir url ile karşılaşıyoruz. Parametreleri incelediğimizde bütün kategorilerdeki kitapları listeleyebileceğimizi farkediyoruz. Bu url ile istek atıp, gelen sayfayı parse ediyoruz. Pagination olduğu için sayfaları dolaşmak gerekiyor. Pagination için gelen sayfadaki pagination div'ini bulup, içindeki toplam sayfa sayısını buluyoruz. Daha sonra for döngüsü ile sayfaları dolaşıyoruz. Her bir kitap .product-cr class'ına sahip. Bu class'ı bulup, içindeki bilgileri çekiyoruz. Çektiğimiz bilgileri bir dict'e atıyoruz. Daha sonra bu dict'i MongoDB veritabanına kaydediyoruz.
+Kitapyurdu.com ve Kitapsepeti.com siteleri static bir site olduğu için, requests kütüphanesi ile sayfaları istek atarak alabiliyoruz. Daha sonra BeautifulSoup kütüphanesi ile sayfaları parse ediyoruz. Öncelikle sitede tüm kitapları tek seferde listelemek için url olup olmadığını araştıyoruz. Kendi araştırmalarım sonucunda kitapyurdun'da index.php?route=product/category&filter_category_all=true&path=1&filter_in_stock=1&filter_in_shelf=1&sort=purchased_365&order=DESC&limit=100 gibi bir url
+in yapıcağımız işe uygun olduğunu fark ediyorum.Kitapsepeti.com'da /roman?stock=1 üzerinden ilerliyor olacağız. İki site'de öncelikle kaç adet sayfa olduğunu bulmak için ilgili pagination elementlerinin içini scrape ederek gerekli veriyi parse ediyoruz. Bunu sayfaları gezinmekte kullanacağız. Daha sonra sayfaları gezerek kitapların bulunduğu div elementlerini scrape ediyoruz. Bu elementlerin içindeki bilgileri parse ederek, kitap bilgilerini elde ediyoruz. Daha sonra bu bilgileri MongoDB veritabanına kaydediyoruz. Bu işlemi yaparken, her sayfada bir kaldığımız yerin kaydedilmesini sağlıyoruz. Böylece program herhangi bir sebepten dolayı durduğunda, kaldığı yerden devam edebiliyor.
 
 ## Projenin Özellikleri
 
-- [x] Kitap bilgilerini kazıma
+- [x] Kitap ve pagination bilgilerinin kazıma
 - [x] Kitap bilgilerini MongoDB veritabanına kaydetme
-- [x] Uzun bir süreç olduğu için (200 sayfa iterasyonu ile yaklasik 15K kitap bilgisi çektim), her 100 kitapta bir kaldığımız yerin kaydedilmesi
+- [x] Her Sayfa başlangıcında kaldığı yerin kaydedilmesi
 
 ## Linkler
 
-[Kazılmış Örnek Kitaplar](https://drive.google.com/file/d/1PK0uotnxCXOeiQvYFfISxYovwITYpGAZ/view?usp=sharing)
+[Kazılmış Örnek Kitaplar - Kitapyurdu](https://drive.google.com/file/d/1PK0uotnxCXOeiQvYFfISxYovwITYpGAZ/view?usp=sharing)
+[Kazılmış Örnek Kitaplar - Kitapsepeti](https://drive.google.com/file/d/1m5sSmST6FmOBohUmERyvLY4fJnNiDngF/view?usp=sharing)
+
+## Ekran Görüntüleri
+
+Giriş ekranı
+![Komut Satırı giriş](https://gcdnb.pbrd.co/images/zlg3JpX4w8R8.png)
+
+Kitapyurdu.com kazıma
+![Komut Satırı seçim](https://gcdnb.pbrd.co/images/6vZPFAofAHSI.png)
+
+Kitapsepeti.com Çıktı
+![Komut Satırı çıktı](https://gcdnb.pbrd.co/images/ZjnTalRXMrBk.png)
