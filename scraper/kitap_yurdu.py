@@ -4,6 +4,19 @@ from typing import List, Tuple
 import requests
 from bs4 import BeautifulSoup, PageElement
 
+from db.mongo import save_book
+from utils.helpers import get_latest_state, set_latest_state, build_url_with_params
+
+
+import pathlib
+import configparser
+import os
+
+
+ROOT_DIR = pathlib.Path(__file__).parent.parent.absolute()
+constants = configparser.ConfigParser()
+constants.read(os.path.join(ROOT_DIR, "constants.ini"))
+
 
 def ky_scrape_books_from_page(url: str) -> Tuple[List[PageElement], int]:
     """
@@ -101,3 +114,40 @@ def ky_extract_books_from_elements(book_elements: List[PageElement]) -> List[dic
         books.append(book)
 
     return books
+
+
+def ky_start_scraping():
+    KY_URL = constants["CONSTANTS"]["KY_URL"]
+    CURRENT_PAGE, CURRENT_PAGE_COUNT = get_latest_state("ky_")
+
+    print("Current page: {}".format(CURRENT_PAGE))
+    print("Current page count: {}".format(CURRENT_PAGE_COUNT))
+
+    while CURRENT_PAGE <= CURRENT_PAGE_COUNT:
+        if CURRENT_PAGE == 0 and CURRENT_PAGE_COUNT == 0:
+            print("Scraping page 1...")
+            book_elements, page_count = ky_scrape_books_from_page(KY_URL)
+            books = ky_extract_books_from_elements(book_elements)
+
+            for book in books:
+                save_book(book, "kitapyurdu")
+
+            CURRENT_PAGE = 1
+            CURRENT_PAGE_COUNT = page_count
+            set_latest_state("ky_", CURRENT_PAGE, CURRENT_PAGE_COUNT)
+        else:
+            for page in range(CURRENT_PAGE, CURRENT_PAGE_COUNT + 1):
+                params = {"page": [page]}
+                new_page_url = build_url_with_params(KY_URL, params)
+                print("Scraping page {}...".format(page))
+                print("URL: {}".format(new_page_url))
+                book_elements, _ = ky_scrape_books_from_page(new_page_url)
+                books = ky_extract_books_from_elements(book_elements)
+
+                for book in books:
+                    save_book(book, "kitapyurdu")
+
+                CURRENT_PAGE = page
+                set_latest_state("ky_", CURRENT_PAGE, CURRENT_PAGE_COUNT)
+
+            print("Scraping completed.")
