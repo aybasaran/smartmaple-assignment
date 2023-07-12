@@ -25,10 +25,25 @@ def ky_scrape_books_from_page(url: str) -> Tuple[List[PageElement], int]:
     if len(book_elements) == 0:
         raise Exception("Couldn't find any book elements.")
 
+    # clean page request and soup
+    page.close()
+    soup.decompose()
+
     return book_elements, KY_GET_PAGE_COUNT(page_count_text)
 
 
 def KY_GET_PAGE_COUNT(page_count_text) -> int:
+    """
+    Extracts the page count from the given page count text.
+
+    Args:
+        page_count_text (str): The page count text.
+
+    Returns:
+        int: The page count.
+
+    """
+
     page = re.search(r"\((.*?)\)", page_count_text).group(1)
     page_count = int(page.split(" ")[0])
     return page_count
@@ -48,21 +63,41 @@ def ky_extract_books_from_elements(book_elements: List[PageElement]) -> List[dic
 
     for book_element in book_elements:
         book = {}
-
-        # extract book fields from book element
-
         title = book_element.find("div", class_="name").find("a")["title"]
         publisher = book_element.find("div", class_="publisher").find("a").find("span").text
-        author = book_element.find("div", class_=["author", "compact"]).find("a").text
-        price = (
-            book_element.find("div", class_="price").find("div", class_="price-new").find("span", class_="value").text
-        )
+        author_el = book_element.find("div", class_=["author", "compact"]).find("a")
+
+        # There are some books without author
+        if author_el:
+            author = author_el.text
+        else:
+            author = "N/A"
+
+        # on the website, the price element has two different classes
+        # price-new and price-old
+        # a little bit debugging i figured out that the price-new element can be null
+        price_el = book_element.find("div", class_="price")
+        # Even if in stock parameter is true, the price element still can be null
+        if price_el:
+            price_el_new = price_el.find("div", class_="price-new")
+            price_el_old = price_el.find("div", class_="price-old")
+
+            if price_el_new:
+                price = price_el_new.find("span", class_="value").text
+            elif price_el_old:
+                price = price_el_old.find("span", class_="value").text
+            else:
+                price_span_el = price_el.find("span", class_="price-new")
+                if not price_span_el:
+                    price_span_el = price_el.find("span", class_="price-old")
+                price = price_span_el.find("span", class_="value").text
+        else:
+            price = "N/A"
 
         book["title"] = title.strip()
         book["publisher"] = publisher.strip()
         book["author"] = author.strip()
-        # convert price to float
-        book["price"] = float(price.strip().replace(",", "."))
+        book["price"] = price.strip()
         books.append(book)
 
     return books

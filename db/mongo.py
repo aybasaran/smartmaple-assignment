@@ -28,8 +28,16 @@ def save_book(book, collection_name) -> bool:
         client = GET_MONGO_CLIENT()
         db = client["smartmaple"]
         collection = db[collection_name]
+
+        # check book title if exists
+
+        if collection.find_one({"title": book["title"]}):
+            print("Book already exists. {}".format(book["title"]))
+            return False
+
         collection.insert_one(book)
         client.close()
+        print("Book saved. {}".format(book["title"]))
         return True
     except Exception as e:
         print(e)
